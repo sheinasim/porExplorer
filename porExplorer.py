@@ -38,7 +38,6 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     desiredAmountOfData = genomeSize*int(desiredCoverage)
     sequenceLengths = np.array(sequenceLengths)
     sequenceLengths = np.sort(sequenceLengths)[::-1]
-    # sequenceLengths = np.flipud(sequenceLengths)
     cumulativeSum = np.cumsum(sequenceLengths)
     x = np.arange(len(cumulativeSum))
     y = cumulativeSum
@@ -50,7 +49,11 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     countsInBins = np.array(countSeqsInBins(myBins, sequenceLengths), dtype=float)
     minimumSum = np.array(cumulativeSum[cumulativeSum < desiredAmountOfData])
     idx = len(minimumSum)+1
-    cutoff = sequenceLengths[idx]
+    if idx > len(sequenceLengths):
+        print "You do not have enough sequence data to attain " + str(desiredCoverage) + "X coverage. "
+    elif idx <= len(sequenceLengths):
+        cutoff = sequenceLengths[idx]
+        print "Retain sequences larger than "+str(cutoff)+" to achieve "+str(desiredCoverage)+"X coverage. "
 
     # plot accumulation curve
     
@@ -59,7 +62,10 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     plt.xlim(max(x)*-0.05, max(x)+max(x)*0.05)
     plt.ylim(max(y)*-0.1, max(y)+max(y)*0.1)
     yTickLabels = []
-    yArrayOfTicks = np.arange(0, max(y), genomeSize*10)
+    if max(y) >= genomeSize*10:
+        yArrayOfTicks = np.arange(0, max(y), genomeSize*10)
+    if max(y) < genomeSize*10:
+        yArrayOfTicks = np.arange(0, max(y), genomeSize*1)
     for tick in np.nditer(yArrayOfTicks):
         if int(genomeSizeMb) == 0:
             oneLabel = str(tick/(genomeSize*0.1))
@@ -67,17 +73,16 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
         else:
     	    oneLabel = str(tick/genomeSize) + "x"
             plt.ylabel("Genome coverage")
-            print "Retain sequences larger than "+str(cutoff)+" to achieve "+str(desiredCoverage)+"X coverage. "
 	yTickLabels.append(oneLabel)
     plt.yticks(yArrayOfTicks, yTickLabels, fontsize=10)
     plt.title("Accumulation curve")
     # plt.show()
-    if int(desiredCoverage) == 1:
+    if int(desiredCoverage) == 1 or idx > len(sequenceLengths):
         plt.xlabel("Nth read")
         xArrayOfTicks = np.arange(0, max(x), len(x)*0.1)
         plt.xticks(xArrayOfTicks, fontsize=10, rotation='vertical')
         plt.savefig(outputPrefix+"_accumulationCurve.pdf", format='pdf')
-    else:
+    elif int(desiredCoverage) > 1:
         plt.plot([max(x)*-0.05, idx], [desiredAmountOfData, desiredAmountOfData], color='r', linestyle='-')
         plt.plot([idx, idx], [max(y)*-0.1, desiredAmountOfData], color='r', linestyle='-')
         plt.xticks([])
@@ -109,18 +114,18 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     plt.close(fig)
 
 parser = argparse.ArgumentParser(description="Visualize long read data from .fastq or .fastq.gz.")
-parser.add_argument("file", type=argparse.FileType('r'), help=".fastq or .fastq.gz file containing all your sequences.")
-parser.add_argument("-o", "--outputPrefix", help="Prefix for all output files.", type=str, default="out")
-parser.add_argument("-Mb", "--Megabases", help="The genome size in Mb", type=int, default=0)
+parser.add_argument("sequenceFile", type=argparse.FileType('r'), help=".fastq or .fastq.gz file containing all your sequences.")
+parser.add_argument("-out", "--outputPrefix", help="Prefix for all output files.", type=str, default="out")
+parser.add_argument("-gs", "--genomeSize", help="The genome size in Mb", type=int, default=0)
 parser.add_argument("-cov", "--coverage", help="Your desired genome coverage", type=int, default=1)
 args = parser.parse_args()
 
-if args.file.name.endswith(".gz"):
-    command = "gunzip -c " + args.file.name + " >" + args.file.name.strip(".gz")
+if args.sequenceFile.name.endswith(".gz"):
+    command = "gunzip -c " + args.sequenceFile.name + " >" + args.sequenceFile.name.strip(".gz")
     sp.check_output(command, shell=True)
-    tempfastq = args.file.name.strip(".gz")
-    nanoporeplots(tempfastq, args.outputPrefix, args.Megabases, args.coverage)
+    tempfastq = args.sequenceFile.name.strip(".gz")
+    nanoporeplots(tempfastq, args.outputPrefix, args.genomeSize, args.coverage)
     sp.check_output("rm " + tempfastq, shell=True)
-else:
-    nanoporeplots(args.file.name, args.outputPrefix, args.Megabases, args.coverage)
+elif args.sequenceFile.name.endswith("q"):
+    nanoporeplots(args.sequenceFile.name, args.outputPrefix, args.genomeSize, args.coverage)
 
