@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import subprocess as sp
 import sys
 import numpy as np
 import matplotlib
@@ -102,5 +103,13 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
 if len(sys.argv) < 2:
     usage()
 else:
-    nanoporeplots(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    if sys.argv[1].endswith(".gz"):
+        command = 'gunzip -c ' + sys.argv[1] + ' >' + sys.argv[1].strip('.gz')
+        sp.check_output(command, shell=True)
+        tempfastq = sys.argv[1].strip(".gz")
+        nanoporeplots(tempfastq, sys.argv[2], sys.argv[3], sys.argv[4])
+        #print tempfastq
+        sp.check_output('rm ' + tempfastq, shell=True)
+    else:
+        nanoporeplots(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
 
