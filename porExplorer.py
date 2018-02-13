@@ -37,7 +37,10 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
 	        sequenceLengths.append(len(line))
 	    else:
 	        pass
-    genomeSize = int(genomeSizeMb)*1000000
+    if int(genomeSizeMb) != 0:
+        genomeSize = int(genomeSizeMb)*1000000
+    else:
+        genomeSize = 1000000
     desiredAmountOfData = genomeSize*int(desiredCoverage)
     sequenceLengths = np.array(sequenceLengths)
     sequenceLengths = np.sort(sequenceLengths)[::-1]
@@ -57,26 +60,37 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
 
     # plot accumulation curve
     
-    print "Retain sequences larger than "+str(cutoff)+" to achieve "+str(desiredCoverage)+"X coverage. "
     fig = plt.figure()
     plt.scatter(fewerX,fewerY, c="#328AFF")
     plt.xlim(max(x)*-0.05, max(x)+max(x)*0.05)
     plt.ylim(max(y)*-0.1, max(y)+max(y)*0.1)
-    plt.plot([max(x)*-0.05, idx], [desiredAmountOfData, desiredAmountOfData], color='r', linestyle='-')
-    plt.plot([idx, idx], [max(y)*-0.1, desiredAmountOfData], color='r', linestyle='-')
     yTickLabels = []
     yArrayOfTicks = np.arange(0, max(y), genomeSize*10)
     for tick in np.nditer(yArrayOfTicks):
-    	oneLabel = str(tick/genomeSize) + "x"
+        if int(genomeSizeMb) == 0:
+            oneLabel = str(tick/(genomeSize*0.1))
+            plt.ylabel("Data (Mb)")
+        else:
+    	    oneLabel = str(tick/genomeSize) + "x"
+            plt.ylabel("Genome coverage")
+            print "Retain sequences larger than "+str(cutoff)+" to achieve "+str(desiredCoverage)+"X coverage. "
 	yTickLabels.append(oneLabel)
-    plt.yticks(yArrayOfTicks, yTickLabels)
-    plt.xticks([])
-    plt.ylabel("Genome coverage")
-    cutoffText = str(cutoff) + "bp"
-    plt.text(idx, max(y)*-0.1275, cutoffText, rotation='vertical', fontsize=8, ha='center', ma='right')
+    plt.yticks(yArrayOfTicks, yTickLabels, fontsize=10)
     plt.title("Accumulation curve")
     # plt.show()
-    plt.savefig(outputPrefix+"_accumulationCurve_"+str(desiredCoverage)+"X.pdf", format='pdf')
+    if int(desiredCoverage) == 1:
+        plt.xlabel("Nth read")
+        xArrayOfTicks = np.arange(0, max(x), len(x)*0.1)
+        plt.xticks(xArrayOfTicks, fontsize=10, rotation='vertical')
+        plt.savefig(outputPrefix+"_accumulationCurve.pdf", format='pdf')
+    else:
+        plt.plot([max(x)*-0.05, idx], [desiredAmountOfData, desiredAmountOfData], color='r', linestyle='-')
+        plt.plot([idx, idx], [max(y)*-0.1, desiredAmountOfData], color='r', linestyle='-')
+        plt.xticks([])
+        cutoffText = str(cutoff) + "bp"
+        plt.text(idx, max(y)*-0.1275, cutoffText, rotation='vertical', fontsize=8, ha='center', ma='right')
+        plt.savefig(outputPrefix+"_accumulationCurve_"+str(desiredCoverage)+"X.pdf", format='pdf')
+
     plt.close(fig)
 
     # plot read length histogram
@@ -107,8 +121,12 @@ else:
         command = 'gunzip -c ' + sys.argv[1] + ' >' + sys.argv[1].strip('.gz')
         sp.check_output(command, shell=True)
         tempfastq = sys.argv[1].strip(".gz")
-        nanoporeplots(tempfastq, sys.argv[2], sys.argv[3], sys.argv[4])
-        #print tempfastq
+        if len(sys.argv) == 3:
+            nanoporeplots(tempfastq, sys.argv[2])
+        elif len(sys.argv) == 4:
+            nanoporeplots(tempfastq, sys.argv[2], sys.argv[3])
+        elif len(sys.argv) == 5:
+            nanoporeplots(tempfastq, sys.argv[2], sys.argv[3], sys.argv[4])
         sp.check_output('rm ' + tempfastq, shell=True)
     else:
         nanoporeplots(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
