@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
+import argparse
 import subprocess as sp
 import sys
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-# usage
-def usage():
-    print("\n-usage: "+sys.argv[0]+" <fastq> <outputPrefix> <genome size in Mb (write 100 Mb genome as 100)> <desired coverage>")  
-    sys.exit()
 
 def calculateSumsInBins(arrayOfBins, arrayOfSequenceLengths):
     listOfSums = []
@@ -112,20 +108,19 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     plt.savefig(outputPrefix+"_proportionHist.pdf", format='pdf')
     plt.close(fig)
 
-if len(sys.argv) < 2:
-    usage()
+parser = argparse.ArgumentParser(description="Visualize long read data from .fastq or .fastq.gz.")
+parser.add_argument("file", type=argparse.FileType('r'), help=".fastq or .fastq.gz file containing all your sequences.")
+parser.add_argument("-o", "--outputPrefix", help="Prefix for all output files.", type=str, default="out")
+parser.add_argument("-Mb", "--Megabases", help="The genome size in Mb", type=int, default=0)
+parser.add_argument("-cov", "--coverage", help="Your desired genome coverage", type=int, default=1)
+args = parser.parse_args()
+
+if args.file.name.endswith(".gz"):
+    command = "gunzip -c " + args.file.name + " >" + args.file.name.strip(".gz")
+    sp.check_output(command, shell=True)
+    tempfastq = args.file.name.strip(".gz")
+    nanoporeplots(tempfastq, args.outputPrefix, args.Megabases, args.coverage)
+    sp.check_output("rm " + tempfastq, shell=True)
 else:
-    if sys.argv[1].endswith(".gz"):
-        command = 'gunzip -c ' + sys.argv[1] + ' >' + sys.argv[1].strip('.gz')
-        sp.check_output(command, shell=True)
-        tempfastq = sys.argv[1].strip(".gz")
-        if len(sys.argv) == 3:
-            nanoporeplots(tempfastq, sys.argv[2])
-        elif len(sys.argv) == 4:
-            nanoporeplots(tempfastq, sys.argv[2], sys.argv[3])
-        elif len(sys.argv) == 5:
-            nanoporeplots(tempfastq, sys.argv[2], sys.argv[3], sys.argv[4])
-        sp.check_output('rm ' + tempfastq, shell=True)
-    else:
-        nanoporeplots(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    nanoporeplots(args.file.name, args.outputPrefix, args.Megabases, args.coverage)
 
