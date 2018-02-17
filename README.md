@@ -3,7 +3,7 @@ Visualize your raw Nanopore or PacBio sequences from fastq
 
 environment: python 2
 requires: numpy and matplotlib
-usage: porExplorer.py <fastq> <outfile prefix> <genome size in Mb (write 100 Mb genome as 100)> <desired coverage (write 40x as 40)>
+"./porExplorer.py -h" for usage instructions 
 
 outputs: 
 1) accumulation plot showing coverage and minimum sequence size to achieve desired coverage
