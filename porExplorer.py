@@ -58,7 +58,7 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     # plot accumulation curve
     
     fig = plt.figure()
-    plt.scatter(fewerX,fewerY, c="#328AFF")
+    plt.scatter(fewerX,fewerY, c="#d62728")
     plt.xlim(max(x)*-0.05, max(x)+max(x)*0.05)
     plt.ylim(max(y)*-0.1, max(y)+max(y)*0.1)
     yTickLabels = []
@@ -95,7 +95,7 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     # plot read length histogram
 
     fig = plt.figure()
-    plt.bar(range(len(myBins)), countsInBins, color="#328AFF", align='edge')
+    plt.bar(range(len(myBins)), countsInBins, color="#d62728", align='edge')
     plt.title("Histogram of sequence lengths")
     plt.ylabel("Number of reads")
     plt.xlabel("Length (Kb)")
@@ -113,7 +113,7 @@ def nanoporeplots(inFastq, outputPrefix="output", genomeSizeMb=0, desiredCoverag
     plt.savefig(outputPrefix+"_proportionHist.pdf", format='pdf')
     plt.close(fig)
 
-parser = argparse.ArgumentParser(description="Visualize long read data from .fastq or .fastq.gz.")
+parser = argparse.ArgumentParser(description="Visualize long read data from sequence files (.fasta or .fastq, zipped or unzipped)")
 parser.add_argument("sequenceFile", type=argparse.FileType('r'), help=".fastq or .fastq.gz file containing all your sequences.")
 parser.add_argument("-out", "--outputPrefix", help="Prefix for all output files.", type=str, default="out")
 parser.add_argument("-gs", "--genomeSize", help="The genome size in Mb", type=int, default=0)
